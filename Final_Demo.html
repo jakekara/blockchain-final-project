@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>README</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Final_Demo</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11775,101 +11775,2014 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Taxblock">Taxblock<a class="anchor-link" href="#Taxblock">&#182;</a></h1><p>By Jake Kara<br>
+<h1 id="TaxBlock-demonstration">TaxBlock demonstration<a class="anchor-link" href="#TaxBlock-demonstration">&#182;</a></h1><p>By Jake Kara<br>
 Final project<br>
 CSCI E-118<br>
 Intro. to Blockchain and Bitcoin<br>
 Fall 2018</p>
-<p><em>Protoype for property tax and property transfer management via blockchain.</em></p>
-<h1 id="Manifest">Manifest<a class="anchor-link" href="#Manifest">&#182;</a></h1><ul>
-<li><strong>MANIFEST.txt</strong> - A list of files in this folder</li>
-<li><strong>README.md</strong> - Main write-up.</li>
-<li><strong>README.ipynb</strong> - In order to view the readme outside of GitHub but within Jupyter Notebook, use this file instead</li>
-<li><strong>README.html</strong> - In order to view the README inside a standard browser, use this file.</li>
-<li><strong>taxblock_solidity/</strong> - solidity contracts (.sol files) that compose the DApp API</li>
-<li><strong>taxblock/</strong> - python wrappers for compiling and testing solidity contracts</li>
-<li><strong>test_contracts.py</strong> - python script to compile all .sol files in taxblock_solidity</li>
-<li><strong>Final_Demo.ipynb</strong> - a walkthrough demonstrating core functionality of taxblock contracts and python wrappers</li>
-<li><strong>Final_Demo.html</strong> - the HTML out of the ipynb walk through</li>
-</ul>
-<h1 id="Why?">Why?<a class="anchor-link" href="#Why?">&#182;</a></h1><p>People have two conflicting interests. When they own property, they want the government to think it is worth as little as possible, minimizing their assessed value and subsequently the amount they have to pay in taxes. But when they sell their property they want to get the highest price possible, which is the true market value.</p>
-<p>If a property is undervalued very significantly, a property owner can save millions if not <a href="https://www.nytimes.com/interactive/2018/10/02/us/politics/donald-trump-tax-schemes-fred-trump.html">billions</a> in taxes over years and decades. Therefore, taxblock makes it impossible to sell a property for more than it is assessed at. If the owner ever wants to sell a property in excess of the maximum allowed audit threshold, they need to seek permission from the tax authority (city or town). In asking for this permission, the owner is opening him or herself up to an audit.</p>
-<p>This creates a far more accurate and fair system of taxing and transfering properties.</p>
-<h1 id="Taxblock-rules">Taxblock rules<a class="anchor-link" href="#Taxblock-rules">&#182;</a></h1><p>The core of taxblock is a set of contracts that allow the taxation and transfer of property with restrictions meant to reduce fraud. It guarantees the following rules:</p>
-<ol>
-<li>The tax authority sets all rates and assessed property values</li>
-<li>When a property is sold, taxes are automatically deducted to pay the tax authority</li>
-<li>A property cannot be sold for a price that varies too greatly from the assessed value</li>
-<li>A property cannot be sold if it has unpaid tax bills</li>
-</ol>
-<p>There are two main users in the system, a tax authority and property owners, who may be considered sellers or buyers at times.</p>
-<p>The tax authority is analogous to a city or town. The tax authority:</p>
-<ol>
-<li>sets the <strong>transfer tax rate</strong>; </li>
-<li>issues <strong>tax bills</strong>; </li>
-<li>sets the <strong>assessed value</strong> of each property; and </li>
-<li>sets the <strong>audit threshold</strong> that limits how much sale prices can vary from a property's assessed value. </li>
-</ol>
-<p>The <strong>transfer tax rate</strong> and <em>all rates in taxblock are represented as a per-1000 or permille amount</em>. When a property is sold, this amount is due to the tax authority:</p>
-
-<pre><code>    TRANSFER_TAX_DUE = TRANSFER_RATE * SALE_PRICE / 1000
-
-</code></pre>
-<p>This amount is automatically deducted from sale transactions as we will see in the "Accepting an offer" section.</p>
-<p>The <strong>tax bills</strong> are issued whenever a tax authority wishes to do so. Whenever a tax bill is issued, every property within the tax authority owes this amount to the tax authority:</p>
-
-<pre><code>    TAX_BILL_DUE = TAX_BILL_RATE * PROPERTY_ASSESSED_VALUE / 1000
-
-</code></pre>
-<p>While transfer taxes are deducted automatically, property owners must pay tax bills manually. Because the creation of tax bills emits an event, an owner could use this API to create an auto-pay functionality). A property cannot be sold by its owner if there are unpaid tax bills.</p>
-<h1 id="Taxblock-workflow">Taxblock workflow<a class="anchor-link" href="#Taxblock-workflow">&#182;</a></h1><p>This section describes how the taxblock system is used in the real world with some detail about relevant portions of the API.</p>
-<h3 id="1.-Creating-a-tax-authority">1. Creating a tax authority<a class="anchor-link" href="#1.-Creating-a-tax-authority">&#182;</a></h3><p>Anyone can create a tax authority contract simply by constructing an instance of the TaxAuthority contract. Each contract has a unique address which cannot be forged.</p>
-<p><strong>LAST MILE NOTE:</strong> A property owner must ensure that they use the correct contract address for their city or town, or else they may be buying and selling properties and paying taxes on properties which do not exist in the real world. One way to exchange these addresses is through QR codes, which can be posted in town hall. A user should scan this QR code before doing any transactions.</p>
-<p>The tax authority should at this point configure the <strong>transfer tax rate</strong> and <strong>audit threshold</strong> as described above.</p>
-<h3 id="2.-Creating-properties">2. Creating properties<a class="anchor-link" href="#2.-Creating-properties">&#182;</a></h3><p>A tax authority creates a property and the owner of the property, which has a unique name not longer than 32 characters. It is up to the tax authority to decide on a naming convention, but it could be street address or a hashed street address.</p>
-<p>The initial assessed value is set to zero, and the owner is set to the creator of the property, so it must be transfered and assessed. No tax bills prior to this point are due on the property, so the town hall employees must have a policy not to add properties that have delinquent taxes or they will not be represented in the system.</p>
-<p><strong>LAST MILE NOTE:</strong> Since each property must be manually added to taxblock, and thousands or hundreds of thousands of properties might exist in the real world, predating the tax block system, it is recommended that towns phase in the addition of properties on to the tax block system. They might want to offer tax incentives to people who switch first, and then eventually require all new transactions to be done through the taxblock system.</p>
-<p><strong>API:</strong> The owner of a TaxAuthority contract instance can create properties by calling the contract's <em>createProperty(bytes32 propertyName)</em> method.</p>
-<h3 id="3.-Issuing-tax-bills">3. Issuing tax bills<a class="anchor-link" href="#3.-Issuing-tax-bills">&#182;</a></h3><p>Now that the tax authority has created some properties, it is time for revenue. The tax authority issues a tax bill, such as a quarterly property ownership tax, or a one-time tax to build a new school.</p>
-<p>When the tax bill is created, no property can be transferred unless it pays that bill.</p>
-<p><strong>API:</strong> The owner of a TaxAuthority contract instance can issue tax bills by calling the contract's <em>createTaxBill(uint rate)</em> method.</p>
-<h3 id="4.-Paying-taxes">4. Paying taxes<a class="anchor-link" href="#4.-Paying-taxes">&#182;</a></h3><p><strong>API:</strong> Anyone but usually the property owner can pay a tax bill by calling the TaxAuthority's <em>payBill(Property property)</em> method, which is payable. This pays the next unpaid tax bill in order that they were created if any exist.</p>
-<h3 id="5.-Making-an-offer">5. Making an offer<a class="anchor-link" href="#5.-Making-an-offer">&#182;</a></h3><p>When someone wants to buy a property, they can make an offer on the property. If the taxes have been paid, and the purchase price does not exceed the maximum sale price, the offer is valid. The maximum sale price is determined by:</p>
-
-<pre><code>    MAXIMUM_SALE_PRICE = PROP_VAL + PROP_VAL * AUDIT_THRESH / 1000
-
-</code></pre>
-<p><strong>API:</strong> The offer can be made by creating an <em>Offer</em> contract instance and passing it to a property's <em>makeOffer(Offer offer)</em> method.</p>
-<p>The Offer contract's constructor is payable and it must be funded at the time it is created. The amount paid to the constructor call is the SALE_PRICE.</p>
-<p><strong>LAST MILE NOTE:</strong> The fact that a proeprt cannot exceed MAXIMUM_SALE_PRICE is the most critical component in this system. If an individual wishes to sell a property for far more than its current assessed value, the owner must contact town officials and ask them to reassess the property higher. Officials may wish to use this interaction to trigger an audit and assess some additional penalties. This would have to be done on a case-by-case basis, and that is why it is meant to break a property's transferability.</p>
-<h3 id="6.-Accepting-an-offer">6. Accepting an offer<a class="anchor-link" href="#6.-Accepting-an-offer">&#182;</a></h3><p><strong>API:</strong> If a valid offer is made, the owner can accept it with the offer contract's <em>accept()</em> method.</p>
-<p>The balance of the offer is transfered to the tax authority, which then:</p>
-<ol>
-<li>transfers the SALE_PRICE less TRANSFER_TAX_DUE to the seller;</li>
-<li>changes the property's owner to the buyer address</li>
-</ol>
-<h1 id="Additional-use-cases-and-real-world-analogies">Additional use cases and real-world analogies<a class="anchor-link" href="#Additional-use-cases-and-real-world-analogies">&#182;</a></h1><h3 id="1.-Repossession">1. Repossession<a class="anchor-link" href="#1.-Repossession">&#182;</a></h3><p>A tax authority and only a tax authority can arbitrarily change the owner of any property at any time. To repossess a property, set the property's owner to the tax authority's address.</p>
-<p><strong>API:</strong> Do this using the property contract's <em>setOwner()</em> method.</p>
-<p><strong>Implementation</strong>: Internally, each property has a <em>billIndex</em> value, which corresponds to an index in the tax authority's <em>taxBills</em> array. The property's <em>billIndex</em> is represents the next unpaid bill, and if it is greater than the last index in the array, the property is considered paid current. Bills can only be paid in order as a result of this internal structure.</p>
-<h3 id="2.-Tax-auction">2. Tax auction<a class="anchor-link" href="#2.-Tax-auction">&#182;</a></h3><p>A tax authority might wish to auction a property for the highest bid. To do so, repossess the property and then set the assessed value to an incredibly high number, preventing the MAXIMUM_SALE_PRICE limitation.</p>
-<p><strong>API:</strong> This requires use of the property's <em>setAssessedValue()</em> method.</p>
-<h1 id="Useful-features-not-implemented">Useful features not implemented<a class="anchor-link" href="#Useful-features-not-implemented">&#182;</a></h1><p>There are many extensions that could make Taxblock more useful, which I did not have time to implement. I will describe some of them below, and how they could be implemented.</p>
-<h3 id="1.-Taxing-gifts">1. Taxing gifts<a class="anchor-link" href="#1.-Taxing-gifts">&#182;</a></h3><p>This system DOES NOT prevent properties from being sold below a minimum sale price, which could be considered a gift. This can be implemented by adding a MINIMUM_SALE_PRICE restriction on creating Offers.</p>
-<h3 id="3.-Forgiving-taxes">3. Forgiving taxes<a class="anchor-link" href="#3.-Forgiving-taxes">&#182;</a></h3><p>Because a TaxAuthority can set a property's <em>billIndex</em> arbitrarily (see the section on "Repossession" above), a TaxAuthoirty could forgive past taxes. This would require the addition of a method on the TaxAuthority contract, called <em>setPropertyTaxIndex(Property property, uint newIndex)</em> that would then call the property's <em>setBillIndex()</em> method.</p>
-<h1 id="Diagram-1">Diagram 1<a class="anchor-link" href="#Diagram-1">&#182;</a></h1><p>This diagram contains the API functions in the contracts but excludes some functions used primarily for internal purposes.</p>
-<p>The color coding corresponds with calls that are meant to be made from other contracts. For instance, the TaxAuthority contract is blue, so every method in other contracts that are meant for the TaxAuthority to call are blue.</p>
-<p>Some shared properties have been abstracted into the Owned, Named and Authorized contracts.</p>
-<p><img src="./TaxBlock%20Contracts.png" alt="Contract dagram"></p>
-<h1 id="Diagram-2:-Creation-of-objects">Diagram 2: Creation of objects<a class="anchor-link" href="#Diagram-2:-Creation-of-objects">&#182;</a></h1><p>This diagram shows how contract instances are created. The security foundation of this system is that contract instances are only real if they are part of the chain of trust that starts with a trusted tax authority administrator creating a TaxAuthority contract. Because of this, individual ether users are not meant to create Properties or TaxBills directly, but instead call API functions to do so.</p>
-<p>Users create TaxAuthorities and Offers directly, but properties and tax bills are created by a TaxAuthority's createProperty() method() and createTaxBill() method.</p>
-<p><img src="./contract_creation.png" alt="Contract creation diagram"></p>
-<h1 id="Diagram-3:-Taxation">Diagram 3: Taxation<a class="anchor-link" href="#Diagram-3:-Taxation">&#182;</a></h1><p>A simplified explanation of how tax bills are created and paid. Numbers represent the sequence of events.</p>
-<p><img src="./taxation.png" alt="Taxation flow diagram"></p>
-<h1 id="Diagram-4:-Transaction">Diagram 4: Transaction<a class="anchor-link" href="#Diagram-4:-Transaction">&#182;</a></h1><p>A simplified explanation of transactions, buying and selling, of properties. Numbers represent the sequence of events.</p>
-<p><img src="./transaction.png" alt="Transaction flow diagram diagram"></p>
 
 </div>
 </div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Load-solidity-contracts">Load solidity contracts<a class="anchor-link" href="#Load-solidity-contracts">&#182;</a></h1><p>The solidity contracts that comprise TaxBlock are in the folder taxblock_solidity/</p>
+<p>This script compiles them all together and creates an interface which we can use to instantiate individual contracts.</p>
+<p>The _test<em>contracts</em> module calls in python wrappers from the taxblock/ folder, which contains helpful wrappers of some of the common ethereum functions we learned in class. This abstraction allows for a simpler notebook.</p>
+<p><strong>NOTE</strong>: These contracts use "^0.4.24" as the solidity version. This can be modified in the ./taxblock/source_code.py file if you require a different version.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip install qrcode
+<span class="kn">import</span> <span class="nn">qrcode</span>
+<span class="kn">from</span> <span class="nn">test_contracts</span> <span class="k">import</span> <span class="n">source</span><span class="p">,</span> <span class="n">interface</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Requirement already satisfied: qrcode in /home/jake/anaconda3/lib/python3.6/site-packages (6.0)
+Requirement already satisfied: six in /home/jake/anaconda3/lib/python3.6/site-packages (from qrcode) (1.11.0)
+Loading contract &#39;Named&#39;
+Loading contract &#39;Owned&#39;
+Loading contract &#39;Authorized&#39;
+Loading contract &#39;TaxAuthority&#39;
+Loading contract &#39;Taxed&#39;
+Loading contract &#39;Traded&#39;
+Loading contract &#39;Property&#39;
+Loading contract &#39;TaxBill&#39;
+Loading contract &#39;Authorized&#39;
+Loading contract &#39;Offer&#39;
+
+Compiling...
+Success!
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;There are </span><span class="si">%d</span><span class="s2"> accounts. Let&#39;s assign them:&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">accounts</span><span class="p">))</span>
+
+<span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;me&quot;</span><span class="p">,</span><span class="s2">&quot;joe&quot;</span><span class="p">,</span><span class="s2">&quot;bob&quot;</span><span class="p">,</span><span class="s2">&quot;steve&quot;</span><span class="p">,</span><span class="s2">&quot;bill&quot;</span><span class="p">,</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span><span class="s2">&quot;jane&quot;</span><span class="p">,</span><span class="s2">&quot;kathy&quot;</span><span class="p">,</span><span class="s2">&quot;sarah&quot;</span><span class="p">,</span><span class="s2">&quot;iris&quot;</span><span class="p">]</span>
+
+<span class="n">universe</span> <span class="o">=</span> <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">users</span><span class="p">)):</span>
+    <span class="n">universe</span><span class="p">[</span><span class="n">users</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">accounts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>    
+
+<span class="n">get_address</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">universe</span><span class="p">[</span><span class="n">x</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">get_user</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> 
+    
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">universe</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">universe</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">k</span>
+        
+<span class="k">def</span> <span class="nf">get_universe</span><span class="p">():</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">universe</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">user_addr</span> <span class="o">=</span> <span class="n">get_address</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">get_user</span><span class="p">(</span><span class="n">user_addr</span><span class="p">)</span> <span class="o">==</span> <span class="n">user</span>
+        <span class="n">is_default</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            
+        <span class="n">balance</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">getBalance</span><span class="p">(</span><span class="n">user_addr</span><span class="p">)</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span><span class="n">user</span><span class="p">,</span>
+            <span class="s2">&quot;address&quot;</span><span class="p">:</span><span class="n">user_addr</span><span class="p">,</span>
+            <span class="s2">&quot;balance&quot;</span><span class="p">:</span><span class="n">balance</span>
+        <span class="p">})</span>
+        
+    <span class="k">return</span> <span class="n">ret</span>
+
+<span class="k">def</span> <span class="nf">print_universe</span><span class="p">():</span>
+    
+    <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">get_universe</span><span class="p">():</span>
+        
+        <span class="n">is_default</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="n">user</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">defaultAccount</span><span class="p">:</span>
+            <span class="n">is_default</span> <span class="o">=</span> <span class="s2">&quot;default: &quot;</span>
+
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;    </span><span class="si">%s</span><span class="s2"> </span><span class="si">%12s</span><span class="s2">: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> 
+               <span class="p">(</span><span class="n">user</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">][:</span><span class="mi">12</span><span class="p">],</span> <span class="n">is_default</span> <span class="o">+</span> <span class="n">user</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">user</span><span class="p">[</span><span class="s2">&quot;balance&quot;</span><span class="p">]))</span>
+
+
+<span class="n">print_universe</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>There are 10 accounts. Let&#39;s assign them:
+    0x7E5F455209  default: me: 1000000000000000000000000
+    0x2B5AD5c479          joe: 1000000000000000000000000
+    0x6813Eb9362          bob: 1000000000000000000000000
+    0x1efF47bc3a        steve: 1000000000000000000000000
+    0xe1AB8145F7         bill: 1000000000000000000000000
+    0xE57bFE9F44        alice: 1000000000000000000000000
+    0xd41c057fd1         jane: 1000000000000000000000000
+    0xF1F6619B38        kathy: 1000000000000000000000000
+    0xF7Edc8FA1e        sarah: 1000000000000000000000000
+    0x4CCeBa2d7D         iris: 1000000000000000000000000
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="1.-Creating-a-tax-authority">1. Creating a tax authority<a class="anchor-link" href="#1.-Creating-a-tax-authority">&#182;</a></h1><p>Anyone can create a tax authority by instantiating a TaxAuthority contract. We will call our town Bethel.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Create a tax authority called bethel</span>
+<span class="n">bethel</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">instance</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;TaxAuthority&quot;</span><span class="p">,</span>
+    <span class="n">constructor_args</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Bethel&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">()]</span>
+<span class="p">)</span>
+
+<span class="n">universe</span><span class="p">[</span><span class="s2">&quot;bethel tax authority&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bethel</span><span class="o">.</span><span class="n">address</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;bethel tax authority&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[4]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;0xF2E246BB76DF876Cef8b38ae84130F4F55De395b&#39;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">get_user</span><span class="p">(</span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;bethel tax authority&quot;</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[5]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;bethel tax authority&#39;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Convert bytes to strings and drop the remaining null characters</span>
+<span class="n">bytes2str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="c1"># Print an underlined string</span>
+<span class="k">def</span> <span class="nf">underline</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">char</span><span class="o">=</span><span class="s2">&quot;=&quot;</span><span class="p">):</span>
+    <span class="n">msg_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="n">char</span> <span class="o">*</span> <span class="n">msg_len</span><span class="p">)</span>
+    
+<span class="k">def</span> <span class="nf">summarize</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">):</span>
+    <span class="n">underline</span> <span class="p">(</span><span class="s2">&quot;TaxBlock summary for the town of </span><span class="si">%s</span><span class="s2">&quot;</span> 
+               <span class="o">%</span> <span class="n">bytes2str</span><span class="p">(</span><span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()))</span>
+    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;* The contract address is </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tax_auth</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;* The owner is </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">get_user</span><span class="p">(</span><span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">owner</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()))</span> 
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;* The tax for transferring properties is $</span><span class="si">%d</span><span class="s2"> per $1000 of assessed value.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">transferTaxRate</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+    <span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;* Properties cannot be sold for </span><span class="si">%d</span><span class="s2"> permille more than their assessed value.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">auditThreshold</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+    <span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;* </span><span class="si">%s</span><span class="s2"> has issued </span><span class="si">%d</span><span class="s2"> tax bills.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="n">bytes2str</span><span class="p">(</span><span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()),</span>
+        <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">taxBillCount</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+    <span class="p">))</span>
+    
+<span class="n">summarize</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>TaxBlock summary for the town of Bethel
+=======================================
+* The contract address is 0xF2E246BB76DF876Cef8b38ae84130F4F55De395b
+* The owner is me
+* The tax for transferring properties is $0 per $1000 of assessed value.
+* Properties cannot be sold for 0 permille more than their assessed value.
+* Bethel has issued 0 tax bills.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s set the audit threshold and the transfer tax rate</span>
+
+<span class="c1"># - The audit threshold is used to compute the maximum allowed sale price, </span>
+<span class="c1">#   based on the assessed value. It is in milles of assessed value</span>
+<span class="c1"># - The transfer tax rate is the per mille amount charged on the sale price</span>
+<span class="c1">#   of each transaction</span>
+
+<span class="n">bethel</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">setAuditThreshold</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+<span class="n">bethel</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">setTransferTaxRate</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+<span class="n">summarize</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>TaxBlock summary for the town of Bethel
+=======================================
+* The contract address is 0xF2E246BB76DF876Cef8b38ae84130F4F55De395b
+* The owner is me
+* The tax for transferring properties is $10 per $1000 of assessed value.
+* Properties cannot be sold for 500 permille more than their assessed value.
+* Bethel has issued 0 tax bills.
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s make a QR code we can share with property owners. </span>
+<span class="c1"># We can post it on the wall at town hall to make sure that</span>
+<span class="c1"># they don&#39;t interact with fraudulent tax authorities.</span>
+
+<span class="k">def</span> <span class="nf">print_qr_code</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">):</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;This is the un-forgable contract address of the </span><span class="si">%s</span><span class="s2"> tax authority&quot;</span>
+          <span class="o">%</span> <span class="n">bytes2str</span><span class="p">(</span><span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">qrcode</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">tax_auth</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+
+<span class="n">print_qr_code</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+This is the un-forgable contract address of the Bethel tax authority
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[8]:</div>
+
+
+
+
+<div class="output_png output_subarea output_execute_result">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQAAAADAX2ykAAACkklEQVR4nO2bQYrkMAxFnyaGWTrQB5ijuG7QR+ozzQ2So9QBGpJlgcOfhZ1UupieoiEdkkFaFOXkLT4ISbasmPiK9T++hIPzzjvvvPPOO/8Zb9UCZi2UfxfALuP87rKjHuc35pMkaQBpAIgZejMDGkmSPvLfrcf5jflxidDRjDRMpg5QRw3nnfU4vw0fHtZGzEG9AelvR6ej6Xf+y3xT/dq3x9Dj/AZ8lNQBpGsoS3u71pwtKe+tx/lt+JqfewOgKStL15CBJhtMtqce57fli3/XlTZmxDiZ+l8ZfXx3PP3OP7Fy+EmSSAMU/2potMrZxIqoO5p+5/9t8/55bBHkIMYA/evNxBiyJU0BxiVHH02/809sbl405UcdjUp/g1h7HiWwPX7PyM/5eQB1SxrW0MypmUbqYi6c+/ds/JyfYw4GIatmaoD4HiC+W8nZ++hxflt+cVwjSx3UQhszlq4/BSBLw8t8AD6afuefWM27MUMa5tKbSkOj0fzM988n5Vfno7rTKucjmHdaUulfuX9PzPftZPRmdt9V2YWp3CRx70kfVb/zn9m8f25UsnJagrgr/Y3ZtR6/Z+TR3Va+HKBUXZbC7P49Mz8G7E03K4fg2umYTN0YUBdv9sB/tx7nt+HL+cigQYxteSjIFJ8DWOq8/p6arze8UXVX1VvA3u7lePT5ulPz9/lJ0jVgl3gzevspSusq+v3+Sfnav0odwPiC+rbJwATEd7u7Vvvocf57+DkD29sAq9BdhmTtsqse57fhH+cny+hGGloTTEEAxuj95/+JN2tZzU+quw9hnUK/84st94MCRqB/FVZH6wKWfrdAzDN3NP3OP7H1xycPQxyrZ/j9/jl58++7nXfeeeedd353/g9LD4I1xrqFHgAAAABJRU5ErkJggg==
+"
+>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="2.-Creating-properties">2. Creating properties<a class="anchor-link" href="#2.-Creating-properties">&#182;</a></h1><p>Now that we have set up the taxauthority contract and posted the QR code on the wall, we are ready for business in the town clerk's office.</p>
+<p>When someone comes in, we need to be able to make a property for them that is controlled by our tax authority contract.</p>
+<p>Oh look, Bob, who owns four properties on Greenwood Avenue, has walked in the door. After a quick check of his paper records, we can see that he's all paid up and we're ready to create his properties in the taxblock system.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Now let&#39;s make some properties</span>
+<span class="k">def</span> <span class="nf">make_property</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">property_name</span><span class="p">):</span>
+    <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">createProperty</span><span class="p">(</span><span class="n">property_name</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+
+<span class="c1"># Make the properties that bob owns.</span>
+<span class="n">make_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+<span class="n">make_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;2 Greenwood Avenue&quot;</span><span class="p">)</span>
+<span class="n">make_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;3 Greenwood Avenue&quot;</span><span class="p">)</span>
+<span class="n">make_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;4 Greenwood Avenue&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># NOTE: We cannot create a duplicate named property. This IS SUPPOSED TO FAIL</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">make_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;GOOD, THIS WAS SUPPOSED TO FAIL!&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>GOOD, THIS WAS SUPPOSED TO FAIL!
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Get a property</span>
+<span class="k">def</span> <span class="nf">get_property</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">property_name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">interface</span><span class="o">.</span><span class="n">instance_at_address</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Property&quot;</span><span class="p">,</span>
+        <span class="n">address</span><span class="o">=</span><span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">getPropertyByName</span><span class="p">(</span>
+            <span class="n">property_name</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="n">greenwood_1</span> <span class="o">=</span> <span class="n">get_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+<span class="n">greenwood_1</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[11]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&lt;web3.utils.datatypes.Contract at 0x7f9843afbba8&gt;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">who_owns</span><span class="p">(</span><span class="n">ownable</span><span class="p">):</span>
+    
+    <span class="c1"># Any ownable will have an owner() function, a </span>
+    <span class="c1"># public getter() of the owner contract attribute</span>
+    
+    <span class="n">owner_address</span> <span class="o">=</span> <span class="n">ownable</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">owner</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_user</span><span class="p">(</span><span class="n">owner_address</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">owner_address</span>
+
+<span class="n">who_owns</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[12]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;me&#39;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Check who owns 1 Greenwood Avenue</span>
+<span class="n">who_owns</span><span class="p">(</span><span class="n">greenwood_1</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[13]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;bethel tax authority&#39;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s use the event log to get a list of properties</span>
+<span class="k">def</span> <span class="nf">read_log_entries</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="n">event_type</span><span class="p">):</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="n">event_type</span><span class="p">]</span><span class="o">.</span><span class="n">createFilter</span><span class="p">(</span><span class="n">fromBlock</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">get_all_entries</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+<span class="k">def</span> <span class="nf">get_all_properties</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">):</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">read_log_entries</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="s2">&quot;NewProperty&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">bytes2str</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">][</span><span class="s2">&quot;propertyName&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ret</span><span class="p">]</span>
+
+<span class="n">get_all_properties</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[14]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[&#39;1 Greenwood Avenue&#39;,
+ &#39;2 Greenwood Avenue&#39;,
+ &#39;3 Greenwood Avenue&#39;,
+ &#39;4 Greenwood Avenue&#39;]</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">who_owns_every_property</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">addr</span> <span class="ow">in</span> <span class="n">get_all_properties</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">who_owns</span><span class="p">(</span><span class="n">get_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="n">addr</span><span class="p">))))</span>
+        
+<span class="n">who_owns_every_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>1 Greenwood Avenue: bethel tax authority
+2 Greenwood Avenue: bethel tax authority
+3 Greenwood Avenue: bethel tax authority
+4 Greenwood Avenue: bethel tax authority
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Ok, let&#39;s finally change the owner of one</span>
+<span class="k">def</span> <span class="nf">transfer_property</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">new_owner_address</span><span class="p">):</span>
+    <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">transferProperty</span><span class="p">(</span>
+        <span class="n">prop</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">(),</span>
+        <span class="n">new_owner_address</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+    
+<span class="n">transfer_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span>
+                  <span class="n">get_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">),</span>
+                  <span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;bob&quot;</span><span class="p">))</span>
+
+<span class="n">who_owns_every_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>1 Greenwood Avenue: bob
+2 Greenwood Avenue: bethel tax authority
+3 Greenwood Avenue: bethel tax authority
+4 Greenwood Avenue: bethel tax authority
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Woohoo! Let&#39;s do the rest</span>
+<span class="n">bethel</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">transferProperty</span><span class="p">(</span><span class="s2">&quot;2 Greenwood Avenue&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
+                                 <span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;bob&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+<span class="n">bethel</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">transferProperty</span><span class="p">(</span><span class="s2">&quot;3 Greenwood Avenue&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
+                                 <span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;bob&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+<span class="n">bethel</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">transferProperty</span><span class="p">(</span><span class="s2">&quot;4 Greenwood Avenue&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
+                                 <span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;bob&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+<span class="n">who_owns_every_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>1 Greenwood Avenue: bob
+2 Greenwood Avenue: bob
+3 Greenwood Avenue: bob
+4 Greenwood Avenue: bob
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">reposses_property</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
+    <span class="n">transfer_property</span><span class="p">(</span>
+        <span class="n">tax_auth</span><span class="p">,</span> 
+        <span class="n">prop</span><span class="p">,</span> 
+        <span class="n">tax_auth</span><span class="o">.</span><span class="n">address</span>
+    <span class="p">)</span>
+<span class="n">reposses_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="n">get_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">))</span>
+<span class="n">who_owns_every_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>1 Greenwood Avenue: bethel tax authority
+2 Greenwood Avenue: bob
+3 Greenwood Avenue: bob
+4 Greenwood Avenue: bob
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Check-if-properties-are-paid-up">Check if properties are paid up<a class="anchor-link" href="#Check-if-properties-are-paid-up">&#182;</a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">greenwood_1</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">billIndex</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[19]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>0</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">bethel</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">taxBillCount</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[20]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>0</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">greenwood_1</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">isPaidCurrent</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[21]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>True</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="3.-Issuing-tax-bills">3. Issuing tax bills<a class="anchor-link" href="#3.-Issuing-tax-bills">&#182;</a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">create_tax_bill</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">tax_rate</span><span class="p">):</span>
+    
+    <span class="sd">&quot;&quot;&quot; tax_rate must be a per-mille amount, per 1000, </span>
+<span class="sd">    instead of percent which is per 100 &quot;&quot;&quot;</span>
+    
+    <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">createTaxBill</span><span class="p">(</span><span class="n">tax_rate</span><span class="p">)</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span>
+
+<span class="n">create_tax_bill</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="n">bethel</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">taxBillCount</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[22]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>1</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># See that a new tax bill event was created</span>
+<span class="n">read_log_entries</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;NewTaxBill&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[23]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[AttributeDict({&#39;args&#39;: AttributeDict({&#39;taxBillIndex&#39;: 0}),
+  &#39;event&#39;: &#39;NewTaxBill&#39;,
+  &#39;logIndex&#39;: 0,
+  &#39;transactionIndex&#39;: 0,
+  &#39;transactionHash&#39;: HexBytes(&#39;0xe649782982bdbdaa0cef07d2fbcc9bd5316227414ffb99132c5b7e27be341bde&#39;),
+  &#39;address&#39;: &#39;0xF2E246BB76DF876Cef8b38ae84130F4F55De395b&#39;,
+  &#39;blockHash&#39;: HexBytes(&#39;0x5e86a5bf4779f2333dd28cb91bc904e2271c0206cbca734cc11b4226d29d21a7&#39;),
+  &#39;blockNumber&#39;: 13})]</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_tax_bill</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">interface</span><span class="o">.</span><span class="n">instance_at_address</span><span class="p">(</span>
+        <span class="s2">&quot;TaxBill&quot;</span><span class="p">,</span>
+        <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">taxBills</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+    <span class="p">)</span>
+<span class="n">tax_bill</span> <span class="o">=</span> <span class="n">get_tax_bill</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;Property owes... </span><span class="si">%d</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="n">tax_bill</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">amountDue</span><span class="p">(</span><span class="n">greenwood_1</span><span class="o">.</span><span class="n">address</span><span class="p">)</span><span class="o">.</span><span class="n">call</span><span class="p">())</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Property owes... 0 
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="4.-Paying-taxes">4. Paying taxes<a class="anchor-link" href="#4.-Paying-taxes">&#182;</a></h1><p>Now that a tax bill has been issued, let's see if our properties are still paid current</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Is Greenwood 1 still paid current?</span>
+<span class="n">get_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">isPaidCurrent</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[25]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>False</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Let's-see-how-much-the-owner-owes">Let's see how much the owner owes<a class="anchor-link" href="#Let's-see-how-much-the-owner-owes">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">property_summary</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">property_name</span><span class="p">):</span>
+    
+    <span class="n">prop</span> <span class="o">=</span> <span class="n">get_property</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">property_name</span><span class="p">)</span>
+    
+    <span class="n">underline</span><span class="p">(</span><span class="s2">&quot;Summary for </span><span class="si">%s</span><span class="s2"> in </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+        <span class="n">property_name</span><span class="p">,</span>
+        <span class="n">bytes2str</span><span class="p">(</span><span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()),</span>
+    <span class="p">))</span>
+    
+    <span class="n">assessed_value</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">assessedValue</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+   
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;* Owner is </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">who_owns</span><span class="p">(</span><span class="n">prop</span><span class="p">))</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;* Assessed value is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">assessed_value</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;* The maximum sale price is </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> 
+           <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">maximumSalePrice</span><span class="p">(</span><span class="n">assessed_value</span><span class="p">)</span><span class="o">.</span><span class="n">call</span><span class="p">())</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;* The tax authority has issued </span><span class="si">%d</span><span class="s2"> tax bills&quot;</span> <span class="o">%</span> <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">taxBillCount</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">())</span>
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;* The property has paid </span><span class="si">%d</span><span class="s2"> tax bills&quot;</span> <span class="o">%</span> <span class="n">prop</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">billIndex</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">())</span>
+    <span class="n">is_paid</span> <span class="o">=</span> <span class="s2">&quot;is not&quot;</span>
+    
+    <span class="k">if</span> <span class="n">prop</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">isPaidCurrent</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">():</span>
+        <span class="n">is_paid</span> <span class="o">=</span> <span class="s2">&quot;is&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="p">(</span>
+        <span class="s2">&quot;* Here&#39;s the next outstanding bill: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> 
+               <span class="n">get_tax_bill</span><span class="p">(</span>
+                   <span class="n">tax_auth</span><span class="p">,</span> 
+               <span class="n">prop</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">billIndex</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+           <span class="p">)</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">amountDue</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">address</span><span class="p">)</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+          <span class="p">)</span>
+
+    <span class="nb">print</span> <span class="p">(</span><span class="s2">&quot;* The property </span><span class="si">%s</span><span class="s2"> paid current&quot;</span> <span class="o">%</span> <span class="n">is_paid</span><span class="p">)</span>
+    
+<span class="n">property_summary</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Summary for 1 Greenwood Avenue in Bethel
+========================================
+* Owner is bethel tax authority
+* Assessed value is 0
+* The maximum sale price is 0
+* The tax authority has issued 1 tax bills
+* The property has paid 0 tax bills
+* Here&#39;s the next outstanding bill: 0
+* The property is not paid current
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Nothing?-That's-because-the-property-has-no-value...">Nothing? That's because the property has no value...<a class="anchor-link" href="#Nothing?-That's-because-the-property-has-no-value...">&#182;</a></h3><p>Let's make it a $1 million property.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">set_assessed_value</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">new_value</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">setPropertyAssessedValue</span><span class="p">(</span>
+        <span class="n">prop</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">1000</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">transact</span><span class="p">()</span> 
+
+<span class="n">set_assessed_value</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span>
+                   <span class="n">greenwood_1</span><span class="p">,</span>
+                   <span class="mi">1000</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[27]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>HexBytes(&#39;0x1233d71be121ca46a602f1087f8462ed998b84d2eb555ed94f17208a5c86a566&#39;)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>... remember, tax rates are permille, not percent, so they are $30 per $1,000 in value, or:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#print (&quot;Property owes... %d &quot; % tax_bill.functions.amountDue(greenwood_1.address).call())</span>
+<span class="n">property_summary</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Summary for 1 Greenwood Avenue in Bethel
+========================================
+* Owner is bethel tax authority
+* Assessed value is 1000000
+* The maximum sale price is 1500000
+* The tax authority has issued 1 tax bills
+* The property has paid 0 tax bills
+* Here&#39;s the next outstanding bill: 30000
+* The property is not paid current
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Pay the taxes</span>
+
+<span class="k">def</span> <span class="nf">pay_next_bill</span><span class="p">(</span><span class="n">tax_auth</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
+    <span class="n">tax_auth</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">payBill</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">address</span><span class="p">)</span><span class="o">.</span><span class="n">transact</span><span class="p">({</span>
+        <span class="s2">&quot;value&quot;</span><span class="p">:</span><span class="n">tax_bill</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">amountDue</span><span class="p">(</span><span class="n">prop</span><span class="o">.</span><span class="n">address</span><span class="p">)</span><span class="o">.</span><span class="n">call</span><span class="p">(),</span>
+    <span class="p">})</span>
+    
+<span class="n">pay_next_bill</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="n">greenwood_1</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">property_summary</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Summary for 1 Greenwood Avenue in Bethel
+========================================
+* Owner is bethel tax authority
+* Assessed value is 1000000
+* The maximum sale price is 1500000
+* The tax authority has issued 1 tax bills
+* The property has paid 1 tax bills
+* The property is paid current
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[31]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Hooray! The taxes are paid. Let&#39;s check the town records...</span>
+<span class="n">read_log_entries</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;BillPaid&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[31]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[AttributeDict({&#39;args&#39;: AttributeDict({&#39;status&#39;: 2}),
+  &#39;event&#39;: &#39;BillPaid&#39;,
+  &#39;logIndex&#39;: 0,
+  &#39;transactionIndex&#39;: 0,
+  &#39;transactionHash&#39;: HexBytes(&#39;0xb10f1e6f9c781f30e5a9234ea30e63236edaa6e074d5e4d8ed3a65afcf122ff8&#39;),
+  &#39;address&#39;: &#39;0xF2E246BB76DF876Cef8b38ae84130F4F55De395b&#39;,
+  &#39;blockHash&#39;: HexBytes(&#39;0xad241f5962a7ab3df0aec297622404a5f16dc97ac393dfffbd426ab81b907eaf&#39;),
+  &#39;blockNumber&#39;: 15})]</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Checking the town&#39;s total receipts</span>
+<span class="n">tax_bill</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">totalReceipts</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[32]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>30000</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[33]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">print_universe</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>    0x7E5F455209  default: me: 999999999999999993693550
+    0x2B5AD5c479          joe: 1000000000000000000000000
+    0x6813Eb9362          bob: 1000000000000000000000000
+    0x1efF47bc3a        steve: 1000000000000000000000000
+    0xe1AB8145F7         bill: 1000000000000000000000000
+    0xE57bFE9F44        alice: 1000000000000000000000000
+    0xd41c057fd1         jane: 1000000000000000000000000
+    0xF1F6619B38        kathy: 1000000000000000000000000
+    0xF7Edc8FA1e        sarah: 1000000000000000000000000
+    0x4CCeBa2d7D         iris: 1000000000000000000000000
+    0xF2E246BB76 bethel tax authority: 30000
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="5.-Making-an-offer">5. Making an offer<a class="anchor-link" href="#5.-Making-an-offer">&#182;</a></h1><p>Remeber the rules:</p>
+<ol>
+<li>A property with back taxes cannot be sold</li>
+<li>A  property cannot be sold for a lot more than* its assessed value</li>
+</ol>
+<p>"A lot more" is defined as:</p>
+<p>property.assessedValue + (tax_authority.auditTreshold / 1000) * property.assessedValue</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[34]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_address_balance</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">getBalance</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_entity_balance</span><span class="p">(</span><span class="n">entity</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_address_balance</span><span class="p">(</span><span class="n">entity</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+
+<span class="n">get_address_balance</span><span class="p">(</span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;me&quot;</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[34]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>999999999999999993693550</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[35]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># First let&#39;s test that we can transfer a property</span>
+<span class="n">transfer_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="n">greenwood_1</span><span class="p">,</span> <span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;joe&quot;</span><span class="p">))</span>
+<span class="n">who_owns_every_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>1 Greenwood Avenue: joe
+2 Greenwood Avenue: bob
+3 Greenwood Avenue: bob
+4 Greenwood Avenue: bob
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[36]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Now let&#39;s make an offer. </span>
+<span class="c1"># Alice wants to buy 1 Greenwood Avenue for $1,000,001</span>
+
+<span class="k">def</span> <span class="nf">submit_offer</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">amount</span><span class="p">,</span> <span class="n">from_user</span><span class="p">):</span>
+    <span class="n">offer</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">instance</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Offer&quot;</span><span class="p">,</span>
+        <span class="n">constructor_args</span><span class="o">=</span><span class="p">[</span><span class="n">prop</span><span class="o">.</span><span class="n">address</span><span class="p">],</span>
+        <span class="n">transaction_params</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">amount</span><span class="p">,</span>
+            <span class="s2">&quot;from&quot;</span><span class="p">:</span><span class="n">get_address</span><span class="p">(</span><span class="n">from_user</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Submit the offer</span>
+    <span class="n">greenwood_1</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">makeOffer</span><span class="p">(</span>
+        <span class="n">offer</span><span class="o">.</span><span class="n">address</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">transact</span><span class="p">({</span><span class="s2">&quot;from&quot;</span><span class="p">:</span><span class="n">get_address</span><span class="p">(</span><span class="n">from_user</span><span class="p">)})</span>
+    <span class="n">read_log_entries</span><span class="p">(</span><span class="n">greenwood_1</span><span class="p">,</span> <span class="s2">&quot;NewOffer&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">offer</span>
+
+<span class="n">offer</span> <span class="o">=</span> <span class="n">submit_offer</span><span class="p">(</span><span class="n">greenwood_1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;alice&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[37]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s make sure the offer is funded</span>
+<span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">getBalance</span><span class="p">(</span><span class="n">offer</span><span class="o">.</span><span class="n">address</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[37]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>1000001</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="6.-Accepting-an-offer">6. Accepting an offer<a class="anchor-link" href="#6.-Accepting-an-offer">&#182;</a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[38]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s see how much money joe has before we accept the transaction</span>
+<span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">getBalance</span><span class="p">(</span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;joe&quot;</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[38]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>1000000000000000000000000</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[39]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">offer</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span><span class="o">.</span><span class="n">transact</span><span class="p">({</span><span class="s2">&quot;from&quot;</span><span class="p">:</span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;joe&quot;</span><span class="p">)})</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[39]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>HexBytes(&#39;0x96bf1c092b9d9e5ec88087cee5e72e15ef424ffc74577b7588055ca7bc14d128&#39;)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[40]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">interface</span><span class="o">.</span><span class="n">w3</span><span class="o">.</span><span class="n">eth</span><span class="o">.</span><span class="n">getBalance</span><span class="p">(</span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;joe&quot;</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[40]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>1000000000000000000924093</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[41]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Now let&#39;s see who owns it</span>
+<span class="n">who_owns</span><span class="p">(</span><span class="n">greenwood_1</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[41]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;alice&#39;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[42]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">print_universe</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>    0x7E5F455209  default: me: 999999999999999993659683
+    0x2B5AD5c479          joe: 1000000000000000000924093
+    0x6813Eb9362          bob: 1000000000000000000000000
+    0x1efF47bc3a        steve: 1000000000000000000000000
+    0xe1AB8145F7         bill: 1000000000000000000000000
+    0xE57bFE9F44        alice: 999999999999999997788543
+    0xd41c057fd1         jane: 1000000000000000000000000
+    0xF1F6619B38        kathy: 1000000000000000000000000
+    0xF7Edc8FA1e        sarah: 1000000000000000000000000
+    0x4CCeBa2d7D         iris: 1000000000000000000000000
+    0xF2E246BB76 bethel tax authority: 40000
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[43]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Now let&#39;s try an invalid transaction. </span>
+<span class="c1"># jane will try to buy the property for 2 million</span>
+<span class="n">offer2</span> <span class="o">=</span> <span class="n">submit_offer</span><span class="p">(</span><span class="n">greenwood_1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">2000</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;jane&quot;</span><span class="p">)</span>
+<span class="n">offer2</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span><span class="o">.</span><span class="n">transact</span><span class="p">({</span><span class="s2">&quot;from&quot;</span><span class="p">:</span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;alice&quot;</span><span class="p">)})</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[43]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>HexBytes(&#39;0x5618cbd3152e7c8dafa533ad5dc6fbc13e7d29c1bf938e7952d610598b18ef39&#39;)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[44]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># We can see that the transaction failed and Alice still owns the property</span>
+<span class="n">who_owns</span><span class="p">(</span><span class="n">greenwood_1</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[44]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;alice&#39;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[45]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">property_summary</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Summary for 1 Greenwood Avenue in Bethel
+========================================
+* Owner is alice
+* Assessed value is 1000000
+* The maximum sale price is 1500000
+* The tax authority has issued 1 tax bills
+* The property has paid 1 tax bills
+* The property is paid current
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[46]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># OK, Jane has decied to make a new offer</span>
+<span class="n">offer2</span> <span class="o">=</span> <span class="n">submit_offer</span><span class="p">(</span><span class="n">greenwood_1</span><span class="p">,</span> <span class="mi">1500</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;jane&quot;</span><span class="p">)</span>
+<span class="n">offer2</span><span class="o">.</span><span class="n">functions</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span><span class="o">.</span><span class="n">transact</span><span class="p">({</span><span class="s2">&quot;from&quot;</span><span class="p">:</span><span class="n">get_address</span><span class="p">(</span><span class="s2">&quot;alice&quot;</span><span class="p">)})</span>
+<span class="n">property_summary</span><span class="p">(</span><span class="n">bethel</span><span class="p">,</span> <span class="s2">&quot;1 Greenwood Avenue&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Summary for 1 Greenwood Avenue in Bethel
+========================================
+* Owner is jane
+* Assessed value is 1000000
+* The maximum sale price is 1500000
+* The tax authority has issued 1 tax bills
+* The property has paid 1 tax bills
+* The property is paid current
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[47]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">who_owns_every_property</span><span class="p">(</span><span class="n">bethel</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>1 Greenwood Avenue: jane
+2 Greenwood Avenue: bob
+3 Greenwood Avenue: bob
+4 Greenwood Avenue: bob
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[48]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">print_universe</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>    0x7E5F455209  default: me: 999999999999999993659683
+    0x2B5AD5c479          joe: 1000000000000000000924093
+    0x6813Eb9362          bob: 1000000000000000000000000
+    0x1efF47bc3a        steve: 1000000000000000000000000
+    0xe1AB8145F7         bill: 1000000000000000000000000
+    0xE57bFE9F44        alice: 999999999999999999162541
+    0xd41c057fd1         jane: 999999999999999994137151
+    0xF1F6619B38        kathy: 1000000000000000000000000
+    0xF7Edc8FA1e        sarah: 1000000000000000000000000
+    0x4CCeBa2d7D         iris: 1000000000000000000000000
+    0xF2E246BB76 bethel tax authority: 2055001
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
     </div>
   </div>

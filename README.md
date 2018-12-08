@@ -1,16 +1,16 @@
 # Taxblock
 
-By Jake Kara 
-Final project 
-CSCI E-118
-Intro. to Blockchain and Bitcoin
-Fall 2018
+By Jake Kara  
+Final project   
+CSCI E-118  
+Intro. to Blockchain and Bitcoin  
+Fall 2018  
 
 _Protoype for property tax and property transfer management via blockchain._
 
 # Manifest
 
-* __Manifest.txt__ - A list of files in this folder
+* __MANIFEST.txt__ - A list of files in this folder
 * __README.md__ - Main write-up.
 * __README.ipynb__ - In order to view the readme outside of GitHub but within Jupyter Notebook, use this file instead
 * __README.html__ - In order to view the README inside a standard browser, use this file.
@@ -18,6 +18,7 @@ _Protoype for property tax and property transfer management via blockchain._
 * __taxblock/__ - python wrappers for compiling and testing solidity contracts
 * __test_contracts.py__ - python script to compile all .sol files in taxblock_solidity
 * __Final_Demo.ipynb__ - a walkthrough demonstrating core functionality of taxblock contracts and python wrappers
+* __Final_Demo.html__ - the HTML out of the ipynb walk through
 
 # Why?
 
