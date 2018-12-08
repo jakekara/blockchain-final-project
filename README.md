@@ -125,7 +125,7 @@ This system DOES NOT prevent properties from being sold below a minimum sale pri
 
 Because a TaxAuthority can set a property's _billIndex_ arbitrarily (see the section on "Repossession" above), a TaxAuthoirty could forgive past taxes. This would require the addition of a method on the TaxAuthority contract, called _setPropertyTaxIndex(Property property, uint newIndex)_ that would then call the property's _setBillIndex()_ method.
 
-# Contract interface diagram
+# Diagram 1
 
 This diagram contains the API functions in the contracts but excludes some functions used primarily for internal purposes.
 
@@ -135,10 +135,22 @@ Some shared properties have been abstracted into the Owned, Named and Authorized
 
 ![Contract dagram](./TaxBlock%20Contracts.png)
 
-# Flow diagram 1: Creation of objects
+# Diagram 2: Creation of objects
 
 This diagram shows how contract instances are created. The security foundation of this system is that contract instances are only real if they are part of the chain of trust that starts with a trusted tax authority administrator creating a TaxAuthority contract. Because of this, individual ether users are not meant to create Properties or TaxBills directly, but instead call API functions to do so.
 
 Users create TaxAuthorities and Offers directly, but properties and tax bills are created by a TaxAuthority's createProperty() method() and createTaxBill() method.
 
 ![Contract creation diagram](./contract_creation.png)
+
+# Diagram 3: Taxation
+
+A simplified explanation of how tax bills are created and paid.
+
+![Taxation flow diagram](./taxation.png)
+
+# Diagram 4: Transaction
+
+A simplified explanation of 
+
+![Transaction flow diagram diagram](./transaction.png)
