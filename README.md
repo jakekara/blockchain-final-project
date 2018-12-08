@@ -124,3 +124,13 @@ This system DOES NOT prevent properties from being sold below a minimum sale pri
 ### 3. Forgiving taxes
 
 Because a TaxAuthority can set a property's _billIndex_ arbitrarily (see the section on "Repossession" above), a TaxAuthoirty could forgive past taxes. This would require the addition of a method on the TaxAuthority contract, called _setPropertyTaxIndex(Property property, uint newIndex)_ that would then call the property's _setBillIndex()_ method.
+
+# Contract interface diagram
+
+This diagram contains the API functions in the contracts but excludes some functions used primarily for internal purposes.
+
+The color coding corresponds with calls that are meant to be made from other contracts. For instance, the TaxAuthority contract is blue, so every method in other contracts that are meant for the TaxAuthority to call are blue.
+
+Some shared properties have been abstracted into the Owned, Named and Authorized contracts.
+
+![Contract dagram]("TaxBlock Contracts.png")

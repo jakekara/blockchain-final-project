@@ -38,6 +38,12 @@ contract TaxAuthority is Named, Owned{
     uint public taxBillCount;
     uint public transferTaxRate;
     uint public auditThreshold;
+    
+    enum BillPaidStatus{
+	Underpaid,
+	Overpaid,
+	ExactlyPaid
+    }
 
     event NewTaxBill (
 	uint taxBillIndex
@@ -52,11 +58,6 @@ contract TaxAuthority is Named, Owned{
 	bytes32 propertyName
     );
 
-    enum BillPaidStatus{
-	Underpaid,
-	Overpaid,
-	ExactlyPaid
-    }
 
     event BillPaid (
 	BillPaidStatus status
@@ -210,9 +211,9 @@ contract Traded {
 }
 contract Property is Named, Authorized, Owned {
 
-    uint public billIndex;
-    uint public minimumBid;
     uint public assessedValue;
+    uint public billIndex;
+    uint public minimumBid; // I have not implemented this restriction yet
 
     Offer[] public offers;
     uint public offerCount;
@@ -259,7 +260,6 @@ contract TaxBill is Authorized{
     uint public taxRate;
     uint public totalReceipts;
     uint public billIndex;
-    uint public dueDate;
     
     constructor(uint rate){
 

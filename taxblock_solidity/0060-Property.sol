@@ -1,8 +1,8 @@
 contract Property is Named, Authorized, Owned {
 
-    uint public billIndex;
-    uint public minimumBid;
     uint public assessedValue;
+    uint public billIndex;
+    uint public minimumBid; // I have not implemented this restriction yet
 
     Offer[] public offers;
     uint public offerCount;

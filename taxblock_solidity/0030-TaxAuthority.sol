@@ -6,6 +6,12 @@ contract TaxAuthority is Named, Owned{
     uint public taxBillCount;
     uint public transferTaxRate;
     uint public auditThreshold;
+    
+    enum BillPaidStatus{
+	Underpaid,
+	Overpaid,
+	ExactlyPaid
+    }
 
     event NewTaxBill (
 	uint taxBillIndex
@@ -20,11 +26,6 @@ contract TaxAuthority is Named, Owned{
 	bytes32 propertyName
     );
 
-    enum BillPaidStatus{
-	Underpaid,
-	Overpaid,
-	ExactlyPaid
-    }
 
     event BillPaid (
 	BillPaidStatus status

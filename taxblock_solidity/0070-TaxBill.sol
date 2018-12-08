@@ -3,7 +3,6 @@ contract TaxBill is Authorized{
     uint public taxRate;
     uint public totalReceipts;
     uint public billIndex;
-    uint public dueDate;
     
     constructor(uint rate){
 
