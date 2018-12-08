@@ -1,0 +1,4 @@
+* The code in this repository is licensed under the GPL-3.0
+* web3.py is licensed under MIT - https://github.com/ethereum/web3.py/blob/master/LICENSE
+* qrcode is licensed under BSD - https://pypi.org/project/qrcode/
+* py solc is licnesed under MIT - https://pypi.org/project/py-solc/
