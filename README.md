@@ -134,3 +134,11 @@ The color coding corresponds with calls that are meant to be made from other con
 Some shared properties have been abstracted into the Owned, Named and Authorized contracts.
 
 ![Contract dagram](./TaxBlock%20Contracts.png)
+
+# Flow diagram 1: Creation of objects
+
+This diagram shows how contract instances are created. The security foundation of this system is that contract instances are only real if they are part of the chain of trust that starts with a trusted tax authority administrator creating a TaxAuthority contract. Because of this, individual ether users are not meant to create Properties or TaxBills directly, but instead call API functions to do so.
+
+Users create TaxAuthorities and Offers directly, but properties and tax bills are created by a TaxAuthority's createProperty() method() and createTaxBill() method.
+
+![Contract creation diagram](./contract_creation.png)
