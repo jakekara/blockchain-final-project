@@ -1,14 +1,31 @@
 # Taxblock
 
+By Jake Kara 
+Final project 
+CSCI E-118
+Intro. to Blockchain and Bitcoin
+Fall 2018
+
 _Protoype for property tax and property transfer management via blockchain._
 
-# Files in this repo
+# Manifest
 
-* __README.md__
+* __Manifest.txt__ - A list of files in this folder
+* __README.md__ - Main write-up.
+* __README.ipynb__ - In order to view the readme outside of GitHub but within Jupyter Notebook, use this file instead
+* __README.html__ - In order to view the README inside a standard browser, use this file.
 * __taxblock_solidity/__ - solidity contracts (.sol files) that compose the DApp API
 * __taxblock/__ - python wrappers for compiling and testing solidity contracts
 * __test_contracts.py__ - python script to compile all .sol files in taxblock_solidity
-* __demo.ipynb__ - a walkthrough demonstrating core functionality of taxblock contracts and python wrappers
+* __Final_Demo.ipynb__ - a walkthrough demonstrating core functionality of taxblock contracts and python wrappers
+
+# Why?
+
+People have two conflicting interests. When they own property, they want the government to think it is worth as little as possible, minimizing their assessed value and subsequently the amount they have to pay in taxes. But when they sell their property they want to get the highest price possible, which is the true market value. 
+
+If a property is undervalued very significantly, a property owner can save millions if not [billions](https://www.nytimes.com/interactive/2018/10/02/us/politics/donald-trump-tax-schemes-fred-trump.html) in taxes over years and decades. Therefore, taxblock makes it impossible to sell a property for more than it is assessed at. If the owner ever wants to sell a property in excess of the maximum allowed audit threshold, they need to seek permission from the tax authority (city or town). In asking for this permission, the owner is opening him or herself up to an audit.
+
+This creates a far more accurate and fair system of taxing and transfering properties.
 
 # Taxblock rules
 
@@ -145,12 +162,12 @@ Users create TaxAuthorities and Offers directly, but properties and tax bills ar
 
 # Diagram 3: Taxation
 
-A simplified explanation of how tax bills are created and paid.
+A simplified explanation of how tax bills are created and paid. Numbers represent the sequence of events.
 
 ![Taxation flow diagram](./taxation.png)
 
 # Diagram 4: Transaction
 
-A simplified explanation of 
+A simplified explanation of transactions, buying and selling, of properties. Numbers represent the sequence of events.
 
 ![Transaction flow diagram diagram](./transaction.png)

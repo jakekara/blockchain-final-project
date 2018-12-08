@@ -1,0 +1,10 @@
+
+
+    Manifest.txt - A list of files in this folder
+    README.md - Main write-up.
+    README.ipynb - In order to view the readme outside of GitHub but within Jupyter Notebook, use this file instead
+    README.html - In order to view the README inside a standard browser, use this file.
+    taxblock_solidity/ - solidity contracts (.sol files) that compose the DApp API
+    taxblock/ - python wrappers for compiling and testing solidity contracts
+    test_contracts.py - python script to compile all .sol files in taxblock_solidity
+    Final_Demo.ipynb - a walkthrough demonstrating core functionality of taxblock contracts and python wrappers
