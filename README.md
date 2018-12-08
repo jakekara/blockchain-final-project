@@ -14,19 +14,19 @@ _Protoype for property tax and property transfer management via blockchain._
 
 The core of taxblock is a set of contracts that allow the taxation and transfer of property with restrictions meant to reduce fraud. It guarantees the following rules:
 
-    1. The tax authority sets all rates and assessed property values
-    2. When a property is sold, taxes are automatically deducted to pay the tax authority
-    3. A property cannot be sold for a price that varies too greatly from the assessed value
-    4. A property cannot be sold if it has unpaid tax bills
+1. The tax authority sets all rates and assessed property values
+2. When a property is sold, taxes are automatically deducted to pay the tax authority
+3. A property cannot be sold for a price that varies too greatly from the assessed value
+4. A property cannot be sold if it has unpaid tax bills
 
 There are two main users in the system, a tax authority and property owners, who may be considered sellers or buyers at times.
 
 The tax authority is analogous to a city or town. The tax authority:
 
-    1. sets the __transfer tax rate__; 
-    2. issues __tax bills__; 
-    3. sets the __assessed value__ of each property; and 
-    4. sets the __audit threshold__ that limits how much sale prices can vary from a property's assessed value. 
+1. sets the __transfer tax rate__; 
+2. issues __tax bills__; 
+3. sets the __assessed value__ of each property; and 
+4. sets the __audit threshold__ that limits how much sale prices can vary from a property's assessed value. 
 
 The __transfer tax rate__ and _all rates in taxblock are represented as a per-1000 or permille amount_. When a property is sold, this amount is due to the tax authority:
 
@@ -79,13 +79,46 @@ When someone wants to buy a property, they can make an offer on the property. If
 __API:__ The offer can be made by creating an _Offer_ contract instance and passing it to a property's _makeOffer(Offer offer)_ method.
 
 The Offer contract's constructor is payable and it must be funded at the time it is created. The amount paid to the constructor call is the SALE_PRICE.
-        
+
+__LAST MILE NOTE:__ The fact that a proeprt cannot exceed MAXIMUM_SALE_PRICE is the most critical component in this system. If an individual wishes to sell a property for far more than its current assessed value, the owner must contact town officials and ask them to reassess the property higher. Officials may wish to use this interaction to trigger an audit and assess some additional penalties. This would have to be done on a case-by-case basis, and that is why it is meant to break a property's transferability.
+
 ### 5. Accepting an offer
 
 __API:__ If a valid offer is made, the owner can accept it with the offer contract's _accept()_ method.
 
 The balance of the offer is transfered to the tax authority, which then:
 
-    1. transfers the SALE_PRICE less TRANSFER_TAX_DUE to the seller;
-    2. changes the property's owner to the buyer address
-    
+1. transfers the SALE_PRICE less TRANSFER_TAX_DUE to the seller;
+2. changes the property's owner to the buyer address
+
+### 6. Paying taxes
+
+__API:__ Anyone but usually the property owner can pay a tax bill by calling the TaxAuthority's _payBill(Property property)_ method, which is payable. This pays the next unpaid tax bill in order that they were created if any exist.
+
+# Additional use cases and real-world analogies
+
+### 1. Repossession
+
+A tax authority and only a tax authority can arbitrarily change the owner of any property at any time. To repossess a property, set the property's owner to the tax authority's address.
+
+__API:__ Do this using the property contract's _setOwner()_ method.
+
+__Implementation__: Internally, each property has a _billIndex_ value, which corresponds to an index in the tax authority's _taxBills_ array. The property's _billIndex_ is represents the next unpaid bill, and if it is greater than the last index in the array, the property is considered paid current. Bills can only be paid in order as a result of this internal structure.
+
+###  2. Tax auction
+
+A tax authority might wish to auction a property for the highest bid. To do so, repossess the property and then set the assessed value to an incredibly high number, preventing the MAXIMUM_SALE_PRICE limitation.
+
+__API:__ This requires use of the property's _setAssessedValue()_ method.
+
+# Useful features not implemented
+
+There are many extensions that could make Taxblock more useful, which I did not have time to implement. I will describe some of them below, and how they could be implemented.
+
+### 1. Taxing gifts
+
+This system DOES NOT prevent properties from being sold below a minimum sale price, which could be considered a gift. This can be implemented by adding a MINIMUM_SALE_PRICE restriction on creating Offers.
+
+### 3. Forgiving taxes
+
+Because a TaxAuthority can set a property's _billIndex_ arbitrarily (see the section on "Repossession" above), a TaxAuthoirty could forgive past taxes. This would require the addition of a method on the TaxAuthority contract, called _setPropertyTaxIndex(Property property, uint newIndex)_ that would then call the property's _setBillIndex()_ method.
