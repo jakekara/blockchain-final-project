@@ -19,7 +19,7 @@ class ContractInterface:
     def interface(self, name):
         return self.compile()['<stdin>:' + name]
 
-    def instance(self, name, constructor_args=(), value=None):
+    def instance(self, name, constructor_args=(), transaction_params={}, value=None):
         contract_interface = self.interface(name)
         
 
@@ -32,8 +32,8 @@ class ContractInterface:
         # Submit the transaction that deploys the contract
         transactionParams = {}
         if value is not None:
-            transactionParams["value"] = value
-        tx_hash = ContractDeploy.constructor(*constructor_args).transact(transactionParams)
+            transaction_params["value"] = value
+        tx_hash = ContractDeploy.constructor(*constructor_args).transact(transaction_params)
 
         # Wait for the transaction to be mined, and get the transaction receipt
         tx_receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)

@@ -32,7 +32,7 @@ The __transfer tax rate__ and _all rates in taxblock are represented as a per-10
 
         TRANSFER_TAX_DUE = TRANSFER_RATE * SALE_PRICE / 1000
 
-This amount is automatically deducted from sale transactions as we will see in the implementation section.
+This amount is automatically deducted from sale transactions as we will see in the "Accepting an offer" section.
 
 The __tax bills__ are issued whenever a tax authority wishes to do so. Whenever a tax bill is issued, every property within the tax authority owes this amount to the tax authority:
 
@@ -70,7 +70,11 @@ When the tax bill is created, no property can be transferred unless it pays that
 
 __API:__ The owner of a TaxAuthority contract instance can issue tax bills by calling the contract's _createTaxBill(uint rate)_ method.
 
-### 4. Making an offer
+### 4. Paying taxes
+
+__API:__ Anyone but usually the property owner can pay a tax bill by calling the TaxAuthority's _payBill(Property property)_ method, which is payable. This pays the next unpaid tax bill in order that they were created if any exist.
+
+### 5. Making an offer
 
 When someone wants to buy a property, they can make an offer on the property. If the taxes have been paid, and the purchase price does not exceed the maximum sale price, the offer is valid. The maximum sale price is determined by:
 
@@ -82,7 +86,7 @@ The Offer contract's constructor is payable and it must be funded at the time it
 
 __LAST MILE NOTE:__ The fact that a proeprt cannot exceed MAXIMUM_SALE_PRICE is the most critical component in this system. If an individual wishes to sell a property for far more than its current assessed value, the owner must contact town officials and ask them to reassess the property higher. Officials may wish to use this interaction to trigger an audit and assess some additional penalties. This would have to be done on a case-by-case basis, and that is why it is meant to break a property's transferability.
 
-### 5. Accepting an offer
+### 6. Accepting an offer
 
 __API:__ If a valid offer is made, the owner can accept it with the offer contract's _accept()_ method.
 
@@ -91,9 +95,7 @@ The balance of the offer is transfered to the tax authority, which then:
 1. transfers the SALE_PRICE less TRANSFER_TAX_DUE to the seller;
 2. changes the property's owner to the buyer address
 
-### 6. Paying taxes
 
-__API:__ Anyone but usually the property owner can pay a tax bill by calling the TaxAuthority's _payBill(Property property)_ method, which is payable. This pays the next unpaid tax bill in order that they were created if any exist.
 
 # Additional use cases and real-world analogies
 

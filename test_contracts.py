@@ -27,4 +27,6 @@ print ("Compiling...")
 interface = ContractInterface(source.to_string())
 print("Success!")
 
-open("dump.sol","w").write(source.to_string());
+fh = open("dump.sol","w")
+fh.write(source.to_string());
+fh.close();

@@ -13,6 +13,7 @@ contract Property is Named, Authorized, Owned {
     
     constructor(bytes32 propertyName){
         name = propertyName;
+        owner = msg.sender;
     }
 
     function setOwner(address newOwner) onlyAuthority{
