@@ -133,4 +133,4 @@ The color coding corresponds with calls that are meant to be made from other con
 
 Some shared properties have been abstracted into the Owned, Named and Authorized contracts.
 
-![Contract dagram](TaxBlock Contracts.png)
+![Contract dagram](./TaxBlock Contracts.png)
